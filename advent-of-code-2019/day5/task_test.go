@@ -1,4 +1,4 @@
-package day21
+package day5
 
 import (
 	"testing"
@@ -8,9 +8,9 @@ import (
 )
 
 func TestPart1(t *testing.T) {
-	require.Equal(t, 19357335, part1(utils.GetInput(t, "input.txt")))
+	require.Equal(t, 14155342, part1(utils.GetInput(t, "input.txt")))
 }
 
 func TestPart2(t *testing.T) {
-	require.Equal(t, 1140147758, part2(utils.GetInput(t, "input.txt")))
+	require.Equal(t, 8684145, part2(utils.GetInput(t, "input.txt")))
 }
