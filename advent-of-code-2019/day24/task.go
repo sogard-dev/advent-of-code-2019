@@ -1,72 +1,165 @@
 package day24
 
 import (
-	"fmt"
 	"strings"
 )
 
-func part1(input string) int {
-	layout := strings.ReplaceAll(input, "\n", "")
+const SIZE = 5
 
-	seen := map[string]bool{layout: true}
-	for {
-		newLayout := iterate(layout)
-		if seen[newLayout] {
-			return calc(newLayout)
-		}
-		layout = newLayout
-		seen[layout] = true
-
-	}
+type bug struct {
+	x, y int
 }
 
-func calc(newLayout string) int {
+type grid map[bug]bool
+
+func gridToString(m grid) string {
+	ret := make([]rune, SIZE*SIZE)
+
+	for y := range SIZE {
+		for x := range SIZE {
+			if m[bug{x: x, y: y}] {
+				ret[y*SIZE+x] = '#'
+			} else {
+				ret[y*SIZE+x] = '.'
+			}
+		}
+	}
+
+	return string(ret)
+}
+
+func part1(input string) int {
+	layout := parseGrid(input)
+
+	seen := map[string]bool{}
+	asString := gridToString(layout)
+	for !seen[asString] {
+		seen[asString] = true
+		layout = iterate(map[int]grid{0: layout}, false)[0]
+		asString = gridToString(layout)
+	}
+	return calc(layout)
+}
+
+func part2(input string, minutes int) int {
+	grid0 := parseGrid(input)
+	grids := map[int]grid{0: grid0}
+
+	for range minutes {
+		grids = iterate(grids, true)
+	}
+
+	sum := 0
+	for _, g := range grids {
+		sum += len(g)
+	}
+	return sum
+}
+
+func parseGrid(input string) grid {
+	grid := grid{}
+	for y, line := range strings.Split(input, "\n") {
+		for x, v := range strings.Split(line, "") {
+			if v == "#" {
+				grid[bug{x: x, y: y}] = true
+			}
+		}
+	}
+	return grid
+}
+
+func calc(m grid) int {
 	sum := 0
 
-	for i, v := range newLayout {
-		if v == '#' {
-			bio := 1 << i
-			sum += bio
-		}
+	for k := range m {
+		num := k.y*SIZE + k.x
+		bio := 1 << num
+		sum += bio
 	}
 
 	return sum
 }
 
-func iterate(n string) string {
-	newLayout := []rune(strings.ReplaceAll(n, "#", "."))
+func iterate(m map[int]grid, part2 bool) map[int]grid {
+	neighbours := map[int]map[bug]int{}
 
-	for i := 0; i < len(n); i++ {
-		ns := 0
-		for _, d := range []int{1, -1, 5, -5} {
-			di := i + d
-			if di >= 0 && di < 25 {
-				if (d == 1 && i%5 == 4) || (d == -1 && i%5 == 0) {
-					continue
-				}
-				if n[di] == '#' {
-					ns += 1
-				}
-			}
+	directions := []bug{{x: 1, y: 0}, {x: 0, y: 1}, {x: -1, y: 0}, {x: 0, y: -1}}
+
+	addAdjacent := func(level int, b bug) {
+		if _, exists := neighbours[level]; !exists {
+			neighbours[level] = map[bug]int{}
 		}
+		neighbours[level][b]++
+	}
 
-		if n[i] == '#' {
-			if ns == 1 {
-				newLayout[i] = '#'
-			}
-		} else {
-			if ns == 1 || ns == 2 {
-				newLayout[i] = '#'
+	for l := range m {
+		for y := range SIZE {
+			for x := range SIZE {
+				if m[l][bug{x: x, y: y}] {
+					for _, d := range directions {
+						nx := d.x + x
+						ny := d.y + y
+
+						isRecMiddle := nx == 2 && ny == 2 && part2
+						if nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && !isRecMiddle {
+							addAdjacent(l, bug{x: nx, y: ny})
+						}
+
+						if part2 {
+							if isRecMiddle {
+								if d.x == -1 {
+									for i := range SIZE {
+										addAdjacent(l+1, bug{x: 4, y: i})
+									}
+								}
+								if d.x == 1 {
+									for i := range SIZE {
+										addAdjacent(l+1, bug{y: i})
+									}
+								}
+								if d.y == -1 {
+									for i := range SIZE {
+										addAdjacent(l+1, bug{x: i, y: 4})
+									}
+								}
+								if d.y == 1 {
+									for i := range SIZE {
+										addAdjacent(l+1, bug{x: i})
+									}
+								}
+							}
+							if nx == SIZE {
+								addAdjacent(l-1, bug{x: 3, y: 2})
+							} else if nx == -1 {
+								addAdjacent(l-1, bug{x: 1, y: 2})
+							}
+
+							if ny == SIZE {
+								addAdjacent(l-1, bug{x: 2, y: 3})
+							} else if ny == -1 {
+								addAdjacent(l-1, bug{x: 2, y: 1})
+							}
+						}
+					}
+				}
 			}
 		}
 	}
 
-	return string(newLayout)
-}
+	newGrid := map[int]grid{}
+	for l, g := range neighbours {
 
-func part2(input string) int {
-	for _, line := range strings.Split(input, "\n") {
-		fmt.Println(line)
+		for k, v := range g {
+			hasBug := m[l] != nil && m[l][k]
+			shouldBeBug := (hasBug && v == 1) || (!hasBug && (v == 1 || v == 2))
+			if shouldBeBug {
+				if _, exists := newGrid[l]; !exists {
+					newGrid[l] = grid{}
+				}
+				newGrid[l][k] = true
+			}
+		}
 	}
-	return 0
+
+	return newGrid
 }
