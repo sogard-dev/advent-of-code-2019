@@ -56,8 +56,11 @@ func solve(input string, program string) int {
 	}
 
 	icc.SetInput(inputs)
+	outputs := []int{}
+	icc.SetOutputter(func(n int) {
+		outputs = append(outputs, n)
+	})
 	icc.ExecuteUntilHalt()
-	outputs := icc.GetOutputs()
 	for _, i := range outputs {
 		print(string(rune(i)))
 	}

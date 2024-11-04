@@ -3,10 +3,9 @@ package intcodecomputer
 type IntCodeComputer struct {
 	memory       map[int]int
 	ip           int
-	inputPtr     int
-	input        []int
-	outputs      []int
 	relativeBase int
+	inputter     func() int
+	outputter    func(int)
 }
 
 func New(initialMemory []int) IntCodeComputer {
@@ -15,8 +14,7 @@ func New(initialMemory []int) IntCodeComputer {
 		mem[i] = v
 	}
 	return IntCodeComputer{
-		memory:  mem,
-		outputs: []int{},
+		memory: mem,
 	}
 }
 
@@ -66,13 +64,12 @@ func (i adjustRelativeBase) execute(icc *IntCodeComputer) {
 }
 
 func (i input) execute(icc *IntCodeComputer) {
-	icc.memory[i.a] = icc.input[icc.inputPtr]
-	icc.inputPtr++
+	icc.memory[i.a] = icc.inputter()
 	icc.ip += 2
 }
 
 func (i output) execute(icc *IntCodeComputer) {
-	icc.outputs = append(icc.outputs, icc.memory[i.a])
+	icc.outputter(icc.memory[i.a])
 	icc.ip += 2
 }
 
@@ -233,10 +230,18 @@ func (icc *IntCodeComputer) GetMemory0() int {
 	return icc.memory[0]
 }
 
-func (icc *IntCodeComputer) GetOutputs() []int {
-	return icc.outputs
+func (icc *IntCodeComputer) SetInput(n []int) {
+	ptr := 0
+	icc.inputter = func() int {
+		ptr += 1
+		return n[ptr-1]
+	}
 }
 
-func (icc *IntCodeComputer) SetInput(n []int) {
-	icc.input = n
+func (icc *IntCodeComputer) SetInputter(n func() int) {
+	icc.inputter = n
+}
+
+func (icc *IntCodeComputer) SetOutputter(n func(int)) {
+	icc.outputter = n
 }

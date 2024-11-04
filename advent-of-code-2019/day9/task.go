@@ -16,7 +16,10 @@ func part2(input string) int {
 func solve(input string, n int) int {
 	icc := intcodecomputer.New(utils.GetAllNumbers(input))
 	icc.SetInput([]int{n})
+	outputs := []int{}
+	icc.SetOutputter(func(n int) {
+		outputs = append(outputs, n)
+	})
 	icc.ExecuteUntilHalt()
-	outputs := icc.GetOutputs()
 	return outputs[len(outputs)-1]
 }
