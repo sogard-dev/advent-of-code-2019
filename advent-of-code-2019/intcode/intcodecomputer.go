@@ -6,6 +6,7 @@ type IntCodeComputer struct {
 	relativeBase int
 	inputter     func() int
 	outputter    func(int)
+	stopped      bool
 }
 
 func New(initialMemory []int) IntCodeComputer {
@@ -215,7 +216,7 @@ func nextOp(icc *IntCodeComputer) op {
 }
 
 func (icc *IntCodeComputer) ExecuteUntilHalt() {
-	for {
+	for !icc.stopped {
 		op := nextOp(icc)
 		switch op.(type) {
 		case halt:
@@ -224,6 +225,10 @@ func (icc *IntCodeComputer) ExecuteUntilHalt() {
 			op.execute(icc)
 		}
 	}
+}
+
+func (icc *IntCodeComputer) Stop() {
+	icc.stopped = true
 }
 
 func (icc *IntCodeComputer) GetMemory0() int {
